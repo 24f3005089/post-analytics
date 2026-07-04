@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 
-EMAIL = "YOUR_REGISTERED_EMAIL"
+EMAIL = "24f3005089@ds.study.iitm.ac.in"
 API_KEY = "ak_h3okoj3oz7uakwvq5bepewb0"
 
 app = FastAPI()
