@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Header, HTTPException
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
@@ -34,41 +35,29 @@ def root():
 
 
 @app.post("/analytics")
-def analytics(
-    request: AnalyticsRequest,
-    x_api_key: str = Header(default=None),
+async def analytics(
+    request: Request,
+    x_api_key: str | None = Header(default=None),
 ):
     if x_api_key != API_KEY:
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized",
-        )
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
-    total_events = len(request.events)
+    body = await request.json()
+    events = body.get("events", [])
 
-    unique_users = len(
-        {event.user for event in request.events}
-    )
+    total_events = len(events)
+    unique_users = len({e["user"] for e in events})
 
     revenue = 0.0
-
     user_totals = {}
 
-    for event in request.events:
-        if event.amount > 0:
-            revenue += event.amount
-            user_totals[event.user] = (
-                user_totals.get(event.user, 0.0)
-                + event.amount
-            )
+    for e in events:
+        amount = float(e["amount"])
+        if amount > 0:
+            revenue += amount
+            user_totals[e["user"]] = user_totals.get(e["user"], 0) + amount
 
-    top_user = ""
-
-    if user_totals:
-        top_user = max(
-            user_totals,
-            key=user_totals.get,
-        )
+    top_user = max(user_totals, key=user_totals.get) if user_totals else ""
 
     return {
         "email": EMAIL,
